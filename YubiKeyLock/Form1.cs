@@ -10,6 +10,12 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using USBClassLibrary;
 
+/// <summary>
+/// Lock your computer on Yubikey Disconnection. I use this for security against siblings due to NDA Sensitive items on it.
+/// 
+/// Copyright Jamie Sinn 2015
+/// 
+/// </summary>
 namespace YubiKeyLock
 {
     public partial class Form1 : Form
@@ -17,27 +23,28 @@ namespace YubiKeyLock
         [DllImport("user32")]
         public static extern void LockWorkStation();
 
-        private USBClass USBPort;
+        private USBClass Yubikey;
         private List<USBClass.DeviceProperties> ListOfUSBDeviceProperties;
         public Form1()
         {
             InitializeComponent();
             WindowState = FormWindowState.Minimized;
-            USBPort = new USBClass();
+            Yubikey = new USBClass();
             ListOfUSBDeviceProperties = new List<USBClass.DeviceProperties>();
-            USBPort.RegisterForDeviceChange(true, Handle);
-            USBPort.USBDeviceRemoved += new USBClass.USBDeviceEventHandler(USBPort_USBDeviceRemoved);
+            Yubikey.RegisterForDeviceChange(true, Handle);
+            Yubikey.USBDeviceRemoved += new USBClass.USBDeviceEventHandler(DeviceRemoved);
         }
         protected override void WndProc(ref Message m)
         {
             bool IsHandled = false;
-            USBPort.ProcessWindowsMessage(m.Msg, m.WParam, m.LParam, ref IsHandled);
+            Yubikey.ProcessWindowsMessage(m.Msg, m.WParam, m.LParam, ref IsHandled);
             base.WndProc(ref m);
         }
 
-        private void USBPort_USBDeviceRemoved(object sender,
+        private void DeviceRemoved(object sender,
                      USBClass.USBDeviceEventArgs e)
         {
+            // The VID and PID need to be changed. This is so it works for my specific key. 
             if (!USBClass.GetUSBDevice(1050, 0403, ref ListOfUSBDeviceProperties, false))
                 LockWorkStation();
         }
